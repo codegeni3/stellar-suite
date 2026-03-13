@@ -63,7 +63,7 @@ const HeroSection = () => {
           <a href={EXTENSION_ITEM_URL} target="_blank" rel="noopener noreferrer" className="btn-primary text-base">
             Try Studio
           </a>
-          <a href="https://canvas.stellarkit.dev" target="_blank" rel="noopener noreferrer" className="btn-outline-light text-base">
+          <a href="https://canvas.stellarkit.xyz" target="_blank" rel="noopener noreferrer" className="btn-outline-light text-base">
             Try Canvas
           </a>
         </div>
@@ -102,9 +102,8 @@ const HeroSection = () => {
                 key={s.label}
                 onClick={() => setActive(i)}
                 aria-label={`Show ${s.label}`}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  i === active ? "w-6 bg-primary" : "w-2 bg-white/40 hover:bg-white/60"
-                }`}
+                className={`h-2 rounded-full transition-all duration-300 ${i === active ? "w-6 bg-primary" : "w-2 bg-white/40 hover:bg-white/60"
+                  }`}
               />
             ))}
           </div>

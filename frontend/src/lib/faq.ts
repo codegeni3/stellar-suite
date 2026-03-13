@@ -35,7 +35,7 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
         id: "gen-3",
         question: "Is Stellar Kit free to use?",
         answer:
-          "Yes. Both Kit Studio and Kit Canvas are free. You can install Kit Studio from the VS Code Marketplace and access Kit Canvas at canvas.stellarkit.dev.",
+          "Yes. Both Kit Studio and Kit Canvas are free. You can install Kit Studio from the VS Code Marketplace and access Kit Canvas at canvas.stellarkit.xyz.",
       },
     ],
   },
@@ -77,7 +77,7 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
         id: "cv-1",
         question: "How do I access Kit Canvas?",
         answer:
-          "Open your browser and go to canvas.stellarkit.dev. No installation required — everything runs in the browser.",
+          "Open your browser and go to canvas.stellarkit.xyz. No installation required — everything runs in the browser.",
       },
       {
         id: "cv-2",

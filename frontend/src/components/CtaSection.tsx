@@ -53,7 +53,7 @@ const CtaSection = () => {
             </p>
             <div className="rounded-lg bg-muted border border-border px-4 py-3 font-mono text-xs text-foreground mb-5">
               <span className="text-muted-foreground select-none">→ </span>
-              canvas.stellarkit.dev
+              canvas.stellarkit.xyz
             </div>
             <a href="#" className="btn-primary w-full !text-sm">
               Open Kit Canvas
