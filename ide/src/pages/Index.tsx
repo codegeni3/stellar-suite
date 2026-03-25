@@ -8,6 +8,7 @@ import { ContractPanel } from "@/components/ide/ContractPanel";
 import { StatusBar } from "@/components/ide/StatusBar";
 import { FileNode } from "@/lib/sample-contracts";
 import { useFileStore } from "@/store/useFileStore";
+import { useIdentityStore } from "@/store/useIdentityStore";
 import {
   PanelLeftClose,
   PanelLeftOpen,
@@ -50,6 +51,12 @@ const Index = () => {
     renameNode,
     markSaved,
   } = useFileStore();
+
+  const { loadIdentities } = useIdentityStore();
+
+  useEffect(() => {
+    loadIdentities();
+  }, [loadIdentities]);
 
   const [terminalExpanded, setTerminalExpanded] = useState(true);
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -157,13 +164,16 @@ const Index = () => {
     }, 1200);
   }, [addLog]);
 
+  const { activeIdentity } = useIdentityStore();
+
   const handleInvoke = useCallback(
     (fn: string, args: string) => {
       setTerminalExpanded(true);
-      addLog("info", `Invoking ${fn}(${args})...`);
+      const signer = activeIdentity ? activeIdentity.nickname : "anonymous";
+      addLog("info", `Invoking ${fn}(${args}) as ${signer}...`);
       setTimeout(() => addLog("success", `✓ Result: ["Hello", "Dev"]`), 800);
     },
-    [addLog]
+    [addLog, activeIdentity]
   );
 
   useEffect(() => {
@@ -192,7 +202,7 @@ const Index = () => {
   };
 
   const { content, language } = getActiveContent();
-  
+
 
   // Tabs with unsaved markers
   const tabsWithStatus = openTabs.map((t) => ({
@@ -338,8 +348,6 @@ const Index = () => {
                   />
                   <div className="flex-1 overflow-hidden">
                     <CodeEditor
-                      content={content}
-                      language={language}
                       onCursorChange={(line, col) => setCursorPos({ line, col })}
                       onSave={handleSave}
                     />
@@ -436,11 +444,10 @@ const Index = () => {
             onClick={() =>
               setMobilePanel(mobilePanel === "explorer" ? "none" : "explorer")
             }
-            className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors border-t-2 ${
-              mobilePanel === "explorer"
-                ? "border-primary text-primary bg-primary/5"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
+            className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors border-t-2 ${mobilePanel === "explorer"
+              ? "border-primary text-primary bg-primary/5"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
           >
             <FolderTree className="h-4 w-4" />
             Explorer
@@ -448,11 +455,10 @@ const Index = () => {
 
           <button
             onClick={() => setMobilePanel("none")}
-            className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors border-t-2 ${
-              mobilePanel === "none"
-                ? "border-primary text-primary bg-primary/5"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
+            className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors border-t-2 ${mobilePanel === "none"
+              ? "border-primary text-primary bg-primary/5"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
           >
             <FileText className="h-4 w-4" />
             Editor
@@ -462,11 +468,10 @@ const Index = () => {
             onClick={() =>
               setMobilePanel(mobilePanel === "interact" ? "none" : "interact")
             }
-            className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors border-t-2 ${
-              mobilePanel === "interact"
-                ? "border-primary text-primary bg-primary/5"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
+            className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors border-t-2 ${mobilePanel === "interact"
+              ? "border-primary text-primary bg-primary/5"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
           >
             <Rocket className="h-4 w-4" />
             Interact
@@ -477,11 +482,10 @@ const Index = () => {
               setTerminalExpanded(!terminalExpanded);
               setMobilePanel("none");
             }}
-            className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors border-t-2 ${
-              terminalExpanded
-                ? "border-primary text-primary bg-primary/5"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
+            className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors border-t-2 ${terminalExpanded
+              ? "border-primary text-primary bg-primary/5"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
           >
             <TerminalIcon className="h-4 w-4" />
             Console
