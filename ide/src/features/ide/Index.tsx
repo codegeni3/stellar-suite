@@ -5,11 +5,11 @@ import { FileExplorer } from "@/components/ide/FileExplorer";
 import { EditorTabs } from "@/components/ide/EditorTabs";
 import CodeEditor from "@/components/ide/CodeEditor";
 import { Terminal } from "@/components/ide/Terminal";
-import { Toolbar } from "@/components/ide/Toolbar";
 import { ContractPanel } from "@/components/ide/ContractPanel";
 import { IdentitiesView } from "@/components/ide/IdentitiesView";
 import { StatusBar } from "@/components/ide/StatusBar";
 import { SearchPane } from "@/components/ide/SearchPane";
+import { IdeShell } from "@/components/layout/IdeShell";
 import { useIdentityStore } from "@/store/useIdentityStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useDiagnosticsStore } from "@/store/useDiagnosticsStore";
@@ -19,18 +19,16 @@ import { type NetworkKey } from "@/lib/networkConfig";
 import { FileNode } from "@/lib/sample-contracts";
 import { createStreamProcessor, readCompileResponse } from "@/utils/compileStream";
 import { parseMixedOutput } from "@/utils/cargoParser";
+import { RpcService } from "@/lib/rpcService";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { DeploymentsView } from "@/components/ide/DeploymentsView";
 import { useDeployedContractsStore } from "@/store/useDeployedContractsStore";
 import {
   FileText,
   FolderTree,
-  PanelLeftClose,
-  PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
   Rocket,
-  Search,
   Terminal as TerminalIcon,
   History,
   Users,
@@ -267,18 +265,35 @@ const Index = () => {
   }, [appendTerminalOutput]);
 
   const handleInvoke = useCallback(
-    (fn: string, args: string) => {
+    async (fn: string, args: string, isSimulation: boolean) => {
       setTerminalExpanded(true);
       const signer =
         activeContext?.type === "web-wallet"
           ? "browser-wallet"
           : activeIdentity?.nickname ?? "anonymous";
-      appendTerminalOutput(`Invoking ${fn}(${args}) as ${signer}...\r\n`);
-      setTimeout(() => {
-        appendTerminalOutput('Result: ["Hello", "Dev"]\r\n');
-      }, 800);
+      appendTerminalOutput(`${isSimulation ? 'Simulating' : 'Invoking'} ${fn}(${args}) as ${signer}...\r\n`);
+
+      try {
+        const parsedArgs = JSON.parse(args);
+        const rpcUrl = network === "local" ? customRpcUrl : horizonUrl;
+        const rpcService = new RpcService(rpcUrl);
+
+        if (isSimulation) {
+          const result = await rpcService.simulateTransaction(contractId!, fn, Array.isArray(parsedArgs) ? parsedArgs : [parsedArgs]);
+          if (result.success) {
+            appendTerminalOutput(`Result: ${JSON.stringify(result.result)}\r\n`);
+          } else {
+            appendTerminalOutput(`Error: ${result.error}\r\n`);
+          }
+        } else {
+          // TODO: Implement actual transaction invocation
+          appendTerminalOutput('Transaction invocation not yet implemented\r\n');
+        }
+      } catch (error) {
+        appendTerminalOutput(`Error: ${error instanceof Error ? error.message : 'Invalid arguments'}\r\n`);
+      }
     },
-    [activeContext, activeIdentity, appendTerminalOutput]
+    [activeContext, activeIdentity, appendTerminalOutput, network, customRpcUrl, horizonUrl, contractId]
   );
 
   const handleRenameNode = useCallback(
@@ -385,96 +400,28 @@ const Index = () => {
         onTest={handleTest}
       />
 
+    <IdeShell
+      onCompile={handleCompile}
+      onDeploy={handleDeploy}
+      onTest={handleTest}
+      isCompiling={isCompiling}
+      buildState={isCompiling ? "building" : "idle"}
+      network={network}
+      onNetworkChange={setNetwork}
+      saveStatus={saveStatus}
+      activeTab={leftSidebarTab}
+      onTabChange={(tab) => {
+        if (leftSidebarTab === tab && showExplorer) {
+          setShowExplorer(false);
+        } else {
+          setLeftSidebarTab(tab);
+          setShowExplorer(true);
+        }
+      }}
+      sidebarVisible={showExplorer}
+      onToggleSidebar={() => setShowExplorer(!showExplorer)}
+    >
       <div className="flex-1 flex overflow-hidden relative">
-        {/* Desktop Sidebar (Left) */}
-        <div className="hidden md:flex flex-col bg-sidebar border-r border-border shrink-0 z-10 w-12 items-center py-4 gap-4">
-          <button
-            onClick={() => {
-              if (leftSidebarTab === "explorer" && showExplorer) {
-                setShowExplorer(false);
-              } else {
-                setLeftSidebarTab("explorer");
-                setShowExplorer(true);
-              }
-            }}
-            className={`p-2 rounded-md transition-all ${
-              showExplorer && leftSidebarTab === "explorer" 
-                ? "bg-primary/20 text-primary shadow-sm" 
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-            title="File Explorer"
-          >
-            <FolderTree className="h-5 w-5" />
-          </button>
-          
-          <button
-            onClick={() => {
-              if (leftSidebarTab === "identities" && showExplorer) {
-                setShowExplorer(false);
-              } else {
-                setLeftSidebarTab("identities");
-                setShowExplorer(true);
-              }
-            }}
-            className={`p-2 rounded-md transition-all ${
-                showExplorer && leftSidebarTab === "identities" 
-                  ? "bg-primary/20 text-primary shadow-sm" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-            title="Identities"
-          >
-            <Users className="h-5 w-5" />
-          </button>
-
-          <button
-            onClick={() => {
-              if (leftSidebarTab === "deployments" && showExplorer) {
-                setShowExplorer(false);
-              } else {
-                setLeftSidebarTab("deployments");
-                setShowExplorer(true);
-              }
-            }}
-            className={`p-2 rounded-md transition-all ${
-              showExplorer && leftSidebarTab === "deployments" 
-                ? "bg-primary/20 text-primary shadow-sm" 
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-            title="Recent Deployments"
-          >
-            <History className="h-5 w-5" />
-          </button>
-
-          <button
-            onClick={() => {
-              if (leftSidebarTab === "search" && showExplorer) {
-                setShowExplorer(false);
-              } else {
-                setLeftSidebarTab("search");
-                setShowExplorer(true);
-                setTimeout(() => searchInputRef.current?.focus(), 0);
-              }
-            }}
-            className={`p-2 rounded-md transition-all ${
-              showExplorer && leftSidebarTab === "search" 
-                ? "bg-primary/20 text-primary shadow-sm" 
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-            title="Search"
-          >
-            <Search className="h-5 w-5" />
-          </button>
-
-          <div className="mt-auto border-t border-border w-full pt-4 flex flex-col items-center">
-            <button
-              onClick={() => setShowExplorer(!showExplorer)}
-              className="p-2 text-muted-foreground hover:text-foreground transition-colors"
-              title="Toggle Sidebar"
-            >
-              {showExplorer ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
-            </button>
-          </div>
-        </div>
 
         {/* Mobile Panels */}
         {mobilePanel === "explorer" && (
@@ -706,7 +653,7 @@ const Index = () => {
           </button>
         </div>
       </div>
-    </div>
+    </IdeShell>
   );
 };
 
