@@ -14,6 +14,7 @@ import { DiffEditorPane } from "@/components/editor/DiffEditorPane";
 import { EditorTabs } from "@/components/ide/EditorTabs";
 import { FileExplorer } from "@/components/ide/FileExplorer";
 import { IdentitiesView } from "@/components/ide/IdentitiesView";
+import { OracleAssistant } from "@/components/ide/OracleAssistant";
 import { SearchPane } from "@/components/ide/SearchPane";
 import { SecurityView } from "@/components/ide/SecurityView";
 import { StatusBar } from "@/components/ide/StatusBar";

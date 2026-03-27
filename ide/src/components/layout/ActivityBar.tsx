@@ -6,6 +6,7 @@ import {
   History,
   Search,
   ShieldAlert,
+  Plug,
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
@@ -78,6 +79,12 @@ const tabs: ActivityBarTab[] = [
     icon: <ShieldAlert className="h-5 w-5" />,
     label: "Security",
     title: "Security & Clippy",
+  },
+  {
+    id: "oracle",
+    icon: <Plug className="h-5 w-5" />,
+    label: "Oracle",
+    title: "Oracle Integration Assistant",
   },
 ];
 
