@@ -23,6 +23,7 @@ import CiConfigGenerator from "@/components/modals/CiConfigGenerator";
 import StateMockEditor from "@/components/modals/StateMockEditor";
 import { WalletManager } from "@/components/WalletManager";
 import { useWorkspaceStore } from "@/store/workspaceStore";
+import { GitBlameToggle } from "@/components/editor/GitBlameLines";
 
 type BuildState = "idle" | "building" | "success" | "error";
 
@@ -113,11 +114,12 @@ export function Toolbar({
             </Button>
           ) : null}
 
+          <GitBlameToggle />
+
           <Button onClick={() => setImportOpen(true)} variant="ghost" size="sm" className="h-8 gap-1.5 text-xs">
             <Github className="h-3.5 w-3.5" />
             Import
           </Button>
-
           <Button onClick={() => setCiOpen(true)} variant="ghost" size="sm" className="h-8 gap-1.5 text-xs">
             <FileCode2 className="h-3.5 w-3.5" />
             Export CI

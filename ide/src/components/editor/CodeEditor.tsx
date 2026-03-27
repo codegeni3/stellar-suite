@@ -16,6 +16,7 @@ import React, { Suspense, useEffect, useRef } from "react";
 import { analyzeMathSafety } from "../../lib/mathSafetyAnalyzer";
 import { useMathSafetyStore } from "../../store/useMathSafetyStore";
 import { Breadcrumbs } from "./Breadcrumbs";
+import { GitBlameLines } from "./GitBlameLines";
 import { getAllMonacoCompletions } from "@/utils/proptestSnippets";
 
 interface CodeEditorProps {
@@ -31,8 +32,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ onCursorChange, onSave }) => {
   const { setJumpToLine, saveViewState, getViewState } = useEditorStore();
   const rustProviderRegistered = useRef(false);
   const monacoRef = useRef<typeof Monaco | null>(null);
-  const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
-  const semanticProviderRegistered = useRef(false);
+  const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);  const semanticProviderRegistered = useRef(false);
   const coverageDecorations = useRef<Monaco.editor.IEditorDecorationsCollection | null>(null);
   const activeFileId = activeTabPath.join("/");
   const activeFileIdRef = useRef(activeFileId);
@@ -563,6 +563,11 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ onCursorChange, onSave }) => {
   return (
     <div className="h-full w-full flex flex-col overflow-hidden">
       <Breadcrumbs />
+      <GitBlameLines
+        editor={editorRef.current}
+        monaco={monacoRef.current}
+        filePath={activeTabPath}
+      />
       <div
         id="tour-monaco"
         className="flex-1 w-full overflow-hidden relative border-t border-border"
