@@ -1,3 +1,11 @@
+"use client";
+
+import { useRef, KeyboardEvent } from "react";
+import { X, Circle, FileText, FileCode, FileJson, Settings } from "lucide-react";
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 import { X, Circle } from "lucide-react";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 
@@ -11,6 +19,88 @@ interface EditorTabsProps {
   onTabSelect?: (path: string[]) => void;
   onTabClose?: (path: string[]) => void;
 }
+
+// ---------------------------------------------------------------------------
+// File icon resolver (matches FileTree.tsx convention)
+// ---------------------------------------------------------------------------
+
+function FileIcon({ name }: { name: string }) {
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+
+  if (ext === "rs") {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        className="h-3.5 w-3.5 shrink-0 text-orange-400"
+        fill="currentColor"
+        aria-hidden="true"
+      >
+        <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm0-13a5 5 0 1 0 0 10A5 5 0 0 0 12 7zm0 8a3 3 0 1 1 0-6 3 3 0 0 1 0 6z" />
+      </svg>
+    );
+  }
+  if (ext === "toml") return <Settings className="h-3.5 w-3.5 shrink-0 text-green-400" aria-hidden="true" />;
+  if (ext === "json") return <FileJson className="h-3.5 w-3.5 shrink-0 text-yellow-400" aria-hidden="true" />;
+  if (["ts", "tsx", "js", "jsx"].includes(ext)) return <FileCode className="h-3.5 w-3.5 shrink-0 text-blue-400" aria-hidden="true" />;
+  return <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />;
+}
+
+// ---------------------------------------------------------------------------
+// EditorTabs
+// ---------------------------------------------------------------------------
+
+/**
+ * EditorTabs
+ *
+ * Horizontal, horizontally-scrollable tab bar above the Monaco editor.
+ *
+ * - Active tab has a top primary-colour border (VS Code style)
+ * - Dirty (unsaved) tabs show a filled dot instead of the X button
+ * - Hovering a dirty tab swaps the dot for the X so it can be closed
+ * - Keyboard: Left/Right arrows move focus between tabs; Enter selects; Delete/Backspace closes
+ */
+export function EditorTabs({ tabs, activeTab, onTabSelect, onTabClose }: EditorTabsProps) {
+  const tabRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>, path: string[]) => {
+    const keys = tabs.map((t) => t.path.join("/"));
+    const currentIdx = keys.indexOf(path.join("/"));
+
+    if (e.key === "ArrowRight") {
+      e.preventDefault();
+      const next = tabs[currentIdx + 1];
+      if (next) {
+        tabRefs.current.get(next.path.join("/"))?.focus();
+      }
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      const prev = tabs[currentIdx - 1];
+      if (prev) {
+        tabRefs.current.get(prev.path.join("/"))?.focus();
+      }
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onTabSelect(path);
+    } else if (e.key === "Delete" || e.key === "Backspace") {
+      e.preventDefault();
+      onTabClose(path);
+    }
+  };
+
+  if (tabs.length === 0) {
+    return <div className="h-9 bg-secondary border-b border-border" aria-label="No open tabs" />;
+  }
+
+  return (
+    <div
+      role="tablist"
+      aria-label="Open editor tabs"
+      className="flex bg-secondary border-b border-border overflow-x-auto scrollbar-none"
+    >
+      {tabs.map((tab) => {
+        const key = tab.path.join("/");
+        const isActive = key === activeTab;
+        const isDirty = !!tab.unsaved;
 
 export function EditorTabs({ onTabSelect, onTabClose }: EditorTabsProps) {
   const { openTabs, activeTabPath, setActiveTabPath, closeTab, unsavedFiles } = useWorkspaceStore();
@@ -27,27 +117,54 @@ export function EditorTabs({ onTabSelect, onTabClose }: EditorTabsProps) {
         return (
           <button
             key={key}
-            className={`group flex items-center gap-1.5 px-2.5 md:px-3 py-1.5 md:py-2 text-[11px] md:text-xs font-mono border-r border-border transition-colors min-w-0 shrink-0 ${
+            ref={(el) => {
+              if (el) tabRefs.current.set(key, el);
+              else tabRefs.current.delete(key);
+            }}
+            role="tab"
+            aria-selected={isActive}
+            aria-label={`${tab.name}${isDirty ? " (unsaved)" : ""}`}
+            tabIndex={isActive ? 0 : -1}
+            className={`group flex items-center gap-1.5 px-2.5 md:px-3 py-1.5 md:py-2 text-[11px] md:text-xs font-mono border-r border-border transition-colors min-w-0 shrink-0 outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-primary/60 ${
               isActive
                 ? "bg-tab-active text-foreground border-t-2 border-t-primary"
                 : "bg-tab-inactive text-muted-foreground hover:bg-tab-hover border-t-2 border-t-transparent"
             }`}
+            onClick={() => onTabSelect(tab.path)}
+            onKeyDown={(e) => handleKeyDown(e, tab.path)}
             onClick={() => (onTabSelect ? onTabSelect(tab.path) : setActiveTabPath(tab.path))}
           >
-            {tab.unsaved && (
-              <Circle className="h-2 w-2 fill-primary text-primary shrink-0" />
-            )}
-            <span className="truncate max-w-[80px] md:max-w-none">{tab.name}</span>
+            {/* File type icon */}
+            <FileIcon name={tab.name} />
+
+            {/* Filename */}
+            <span className="truncate max-w-[80px] md:max-w-[120px]">{tab.name}</span>
+
+            {/*
+              Dirty indicator / close button:
+              - When dirty: show filled dot; on hover swap to X
+              - When clean: show X only on hover
+            */}
             <span
               role="button"
-              className="shrink-0 rounded p-0.5 opacity-0 group-hover:opacity-100 hover:bg-muted transition-opacity"
+              aria-label={`Close ${tab.name}`}
+              className="shrink-0 rounded p-0.5 transition-opacity"
               onClick={(e) => {
                 e.stopPropagation();
                 if (onTabClose) onTabClose(tab.path);
                 else closeTab(tab.path);
               }}
             >
-              <X className="h-3 w-3" />
+              {isDirty ? (
+                <>
+                  {/* Dot � visible by default, hidden on group hover */}
+                  <Circle className="h-2 w-2 fill-primary text-primary group-hover:hidden" aria-hidden="true" />
+                  {/* X � hidden by default, shown on group hover */}
+                  <X className="h-3 w-3 hidden group-hover:block" aria-hidden="true" />
+                </>
+              ) : (
+                <X className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true" />
+              )}
             </span>
           </button>
         );
