@@ -17,6 +17,7 @@ import {
   Binary,
   BarChart2,
   GitMerge,
+  TrendingUp,
 } from "lucide-react";
 import { ReactNode } from "react";
 
@@ -26,6 +27,7 @@ export type ActivityTab =
   | "deployments"
   | "identities"
   | "multisig"
+  | "liquidity"
   | "search"
   | "security"
   | "tests"
@@ -81,6 +83,12 @@ const tabs: ActivityBarTab[] = [
     icon: <GitMerge className="h-5 w-5" />,
     label: "Multisig",
     title: "Multisig Transaction Builder",
+  },
+  {
+    id: "liquidity",
+    icon: <TrendingUp className="h-5 w-5" />,
+    label: "LP Simulator",
+    title: "Liquidity Pool Swap Simulator",
   },
   {
     id: "search",

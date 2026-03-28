@@ -28,6 +28,8 @@ export type SidebarTab =
   | "git"
   | "deployments"
   | "identities"
+  | "multisig"
+  | "liquidity"
   | "search"
   | "security"
   | "tests"
