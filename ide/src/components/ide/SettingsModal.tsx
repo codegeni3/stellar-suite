@@ -16,6 +16,7 @@ import { useUserSettingsStore, Language } from "@/store/useUserSettingsStore";
 import { Sun, Moon, Monitor, Type, Save, Globe, Variable, Languages } from "lucide-react";
 import { useTheme } from "next-themes";
 import { EnvVarManager } from "@/components/settings/EnvVarManager";
+import { ResourceUsageDashboard } from "@/components/settings/ResourceUsageDashboard";
 import { useTranslation } from "react-i18next";
 import {
   Select,
@@ -60,9 +61,10 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
         </DialogHeader>
 
         <Tabs defaultValue="general" className="w-full mt-4">
-          <TabsList className="grid w-full grid-cols-4 bg-muted/50 p-1">
+          <TabsList className="grid w-full grid-cols-5 bg-muted/50 p-1">
             <TabsTrigger value="general" className="data-[state=active]:bg-background">{t('general.general', 'General')}</TabsTrigger>
             <TabsTrigger value="editor" className="data-[state=active]:bg-background">{t('general.editor', 'Editor')}</TabsTrigger>
+            <TabsTrigger value="usage" className="data-[state=active]:bg-background">{t('general.usage', 'Usage')}</TabsTrigger>
             <TabsTrigger value="environment" className="data-[state=active]:bg-background">{t('general.environment', 'Environment')}</TabsTrigger>
             <TabsTrigger value="network" className="data-[state=active]:bg-background">{t('general.network', 'Network')}</TabsTrigger>
           </TabsList>
@@ -170,6 +172,10 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
                 className="data-[state=checked]:bg-primary"
               />
             </div>
+          </TabsContent>
+
+          <TabsContent value="usage" className="space-y-4 py-6 animate-in fade-in-50 duration-300">
+            <ResourceUsageDashboard />
           </TabsContent>
 
           <TabsContent value="environment" className="space-y-4 py-6 animate-in fade-in-50 duration-300">
