@@ -37,6 +37,7 @@ export type SidebarTab =
   | "references"
   | "binary-diff"
   | "benchmarks"
+  | "audit"
   | "assets";
 export type BuildState = "idle" | "building" | "success" | "error";
 
