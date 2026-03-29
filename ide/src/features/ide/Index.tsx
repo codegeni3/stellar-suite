@@ -74,6 +74,8 @@ import {
   createWorkspaceSnapshot,
   tutorialEngine,
 } from "@/lib/tutorials/tutorialEngine";
+import { usePostBuildHooksStore } from "@/store/usePostBuildHooksStore";
+import { runPostBuildHooks } from "@/lib/postBuildHookRunner";
 import { parseCargoAuditOutput } from "@/utils/cargoAuditParser";
 import { parseMixedOutput } from "@/utils/cargoParser";
 import { parseClippyOutput, type ClippyLint } from "@/utils/clippyParser";
@@ -285,6 +287,7 @@ export default function Index() {
   }>({ phase: "idle", message: "Invoke" });
 
   const appendResultLog = useTransactionResultsStore((state) => state.appendLog);
+  const postBuildHooks = usePostBuildHooksStore((state) => state.hooks);
 
   const [clippyLints, setClippyLints] = useState<ClippyLint[]>([]);
   const [isRunningClippy, setIsRunningClippy] = useState(false);
@@ -418,6 +421,7 @@ export default function Index() {
         details: "Contract compiled successfully",
         rawJson: { contractName, network, timestamp: new Date().toISOString() },
       });
+      await runPostBuildHooks(postBuildHooks, appendTerminalOutput);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Build failed";
       appendTerminalOutput(`Build failed: ${message}\r\n`);
@@ -443,6 +447,7 @@ export default function Index() {
     compilePayload,
     contractName,
     network,
+    postBuildHooks,
     setBuildState,
     setDiagnostics,
     setIsCompiling,
