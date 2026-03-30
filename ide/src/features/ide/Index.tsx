@@ -87,6 +87,7 @@ import {
   toRevealRange,
   type TestRunResult,
 } from "@/lib/testResults";
+import { useCompilationWorker } from "@/hooks/useCompilationWorker";
 
 const COMPILE_API_URL =
   process.env.NEXT_PUBLIC_COMPILE_API_URL ?? "/api/compile";
@@ -229,6 +230,8 @@ export default function Index() {
     setTerminalOutput,
   } = useWorkspaceStore();
   useTerminalBridge();
+
+  const { compile: workerCompile, cancel: cancelCompile } = useCompilationWorker();
 
   const { activeContext, activeIdentity, loadIdentities } = useIdentityStore();
   const { localRepoInitialized, hydrateLocalRepo, refreshLocalStatuses } =
@@ -421,25 +424,22 @@ export default function Index() {
       );
     }
 
-    const processor = createStreamProcessor({
-      onTerminalData: appendTerminalOutput,
-    });
+    let wasCancelled = false;
 
     try {
-      const response = await fetch(COMPILE_API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(compilePayload),
+      const result = await workerCompile({
+        url: COMPILE_API_URL,
+        payload: compilePayload,
+        onChunk: appendTerminalOutput,
       });
 
-      const output = await readCompileResponse(response, processor);
-      const diagnostics = parseMixedOutput(output, contractName);
+      const diagnostics = parseMixedOutput(result.output, contractName);
       setDiagnostics(diagnostics);
 
-      if (!response.ok) {
+      if (!result.ok) {
         throw new Error(
-          output.trim() ||
-            `Build request failed with status ${response.status}`,
+          result.output.trim() ||
+            `Build request failed with status ${result.status}`,
         );
       }
 
@@ -455,26 +455,34 @@ export default function Index() {
         rawJson: { contractName, network, timestamp: new Date().toISOString() },
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Build failed";
-      appendTerminalOutput(`Build failed: ${message}\r\n`);
-      setBuildState("error");
-      addAuditLog({
-        category: "build",
-        action: "Contract Build",
-        status: "failure",
-        user: auditUser,
-        params: { contractName, network },
-        details: message,
-        rawJson: {
-          contractName,
-          network,
-          error: message,
-          timestamp: new Date().toISOString(),
-        },
-      });
+      if (error instanceof Error && "cancelled" in error) {
+        wasCancelled = true;
+        appendTerminalOutput("Build cancelled.\r\n");
+        setBuildState("idle");
+      } else {
+        const message = error instanceof Error ? error.message : "Build failed";
+        appendTerminalOutput(`Build failed: ${message}\r\n`);
+        setBuildState("error");
+        addAuditLog({
+          category: "build",
+          action: "Contract Build",
+          status: "failure",
+          user: auditUser,
+          params: { contractName, network },
+          details: message,
+          rawJson: {
+            contractName,
+            network,
+            error: message,
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
     } finally {
       setIsCompiling(false);
-      setTimeout(() => setBuildState("idle"), 1000);
+      if (!wasCancelled) {
+        setTimeout(() => setBuildState("idle"), 1000);
+      }
     }
   }, [
     addAuditLog,
@@ -489,6 +497,7 @@ export default function Index() {
     setDiagnostics,
     setIsCompiling,
     setTerminalExpanded,
+    workerCompile,
   ]);
 
   const handleRunClippy = useCallback(async () => {
@@ -1120,6 +1129,7 @@ export default function Index() {
     <div className="flex h-screen flex-col overflow-hidden">
       <Toolbar
         onCompile={handleCompile}
+        onCancelCompile={cancelCompile}
         onDeploy={() => {
           void handleDeploy();
         }}

@@ -12,6 +12,7 @@ import {
   Loader2,
   FileCode2,
   Database,
+  XCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -40,6 +41,7 @@ type BuildState = "idle" | "building" | "success" | "error";
 
 interface ToolbarProps {
   onCompile: () => void;
+  onCancelCompile?: () => void;
   onDeploy: () => void;
   onTest: () => void;
   isCompiling?: boolean;
@@ -55,6 +57,7 @@ interface ToolbarProps {
 
 export function Toolbar({
   onCompile,
+  onCancelCompile,
   onDeploy,
   onTest,
   isCompiling: propIsCompiling,
@@ -144,6 +147,21 @@ export function Toolbar({
             state={isCompiling ? "building" : buildState}
             disabled={isReadOnly}
           />
+
+          {isCompiling && onCancelCompile ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onCancelCompile}
+              className="h-8 gap-1.5 text-xs text-destructive hover:text-destructive"
+              title="Cancel build"
+              aria-label="Cancel build"
+            >
+              <XCircle className="h-3.5 w-3.5" />
+              Cancel
+            </Button>
+          ) : null}
 
           <Button
             onClick={onDeploy}
