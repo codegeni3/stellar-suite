@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 import { FileExplorer } from "@/components/ide/FileExplorer";
 import { NetworkExplorer } from "@/components/ide/NetworkExplorer";
+import { StateExplorer } from "@/components/ide/StateExplorer";
 import { ContractPanel } from "@/components/ide/ContractPanel";
 import { DeploymentStepper } from "@/components/ide/DeploymentStepper";
 import { SidebarTab } from "@/store/workspaceStore";
@@ -266,6 +267,7 @@ export default function Index() {
   const [bottomTab, setBottomTab] = useState<"console" | "events" | "proptest">(
     "console",
   );
+  const [rightView, setRightView] = useState<"interact" | "state">("interact");
 
   const [wizardOpen, setWizardOpen] = useState(false);
 
@@ -1268,12 +1270,34 @@ export default function Index() {
           ) : null}
 
           {showPanel ? (
-            <div className="w-80 border-l border-border bg-card">
-              <ContractPanel
-                contractId={contractId}
-                onInvoke={handleInvoke}
-                invokeState={invokeState}
-              />
+            <div className="w-80 border-l border-border bg-card flex flex-col">
+              {/* Interact / State tab bar */}
+              <div className="flex shrink-0 border-b border-border">
+                {(["interact", "state"] as const).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setRightView(v)}
+                    className={`flex-1 py-1.5 text-[10px] font-mono font-semibold uppercase tracking-wider transition-colors ${
+                      rightView === v
+                        ? "text-foreground border-b-2 border-primary"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {v}
+                  </button>
+                ))}
+              </div>
+              <div className="flex-1 overflow-hidden">
+                {rightView === "interact" ? (
+                  <ContractPanel
+                    contractId={contractId}
+                    onInvoke={handleInvoke}
+                    invokeState={invokeState}
+                  />
+                ) : (
+                  <StateExplorer network={network} contractId={contractId} />
+                )}
+              </div>
             </div>
           ) : null}
 
