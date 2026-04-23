@@ -9,6 +9,7 @@ import {
 import { toast } from "sonner";
 
 import { FileExplorer } from "@/components/ide/FileExplorer";
+import { NetworkExplorer } from "@/components/ide/NetworkExplorer";
 import { ContractPanel } from "@/components/ide/ContractPanel";
 import { DeploymentStepper } from "@/components/ide/DeploymentStepper";
 import { SidebarTab } from "@/store/workspaceStore";
@@ -1200,6 +1201,9 @@ export default function Index() {
             ) : null}
             {leftSidebarTab === "tests" ? <TestingView /> : null}
             {leftSidebarTab === "git" ? <GitPane /> : null}
+            {leftSidebarTab === "network" ? (
+              <NetworkExplorer network={network} />
+            ) : null}
           </aside>
         ) : null}
 
