@@ -1,6 +1,9 @@
+"use client";
+
 import { useWorkspaceStore } from "@/store/workspaceStore";
-import { Settings } from "lucide-react";
+import { Settings, WifiOff, Loader2, CheckCircle2 } from "lucide-react";
 import { NetworkSelector } from "./NetworkSelector";
+import { useOfflineStatus } from "@/hooks/useOfflineStatus";
 
 interface StatusBarProps {
   language?: string;
@@ -20,6 +23,8 @@ export function StatusBar({ language: propLanguage }: StatusBarProps) {
     files,
     activeTabPath,
   } = useWorkspaceStore();
+
+  const { isOffline, pendingSyncCount, syncState } = useOfflineStatus();
 
   const activeFile = files.find(
     (f) => f.name === activeTabPath[activeTabPath.length - 1],
@@ -41,6 +46,51 @@ export function StatusBar({ language: propLanguage }: StatusBarProps) {
         {unsavedFiles.size > 0 && (
           <span className="text-primary-foreground/70">
             {unsavedFiles.size} unsaved
+          </span>
+        )}
+
+        {/* ── Offline / Sync indicator ── */}
+        {isOffline && (
+          <span
+            id="statusbar-offline-indicator"
+            className="flex items-center gap-1 rounded px-1.5 py-0.5 bg-red-600/90 text-white animate-pulse"
+            title={
+              pendingSyncCount > 0
+                ? `Offline — ${pendingSyncCount} change(s) queued for sync`
+                : "Offline — changes are saved locally"
+            }
+            aria-live="polite"
+            aria-label="Offline mode active"
+          >
+            <WifiOff className="h-3 w-3 shrink-0" aria-hidden="true" />
+            <span className="hidden sm:inline">Offline</span>
+            {pendingSyncCount > 0 && (
+              <span className="ml-0.5 font-semibold">{pendingSyncCount}</span>
+            )}
+          </span>
+        )}
+
+        {!isOffline && syncState === "syncing" && (
+          <span
+            id="statusbar-syncing-indicator"
+            className="flex items-center gap-1 rounded px-1.5 py-0.5 bg-amber-500/90 text-white"
+            aria-live="polite"
+            aria-label="Syncing queued changes"
+          >
+            <Loader2 className="h-3 w-3 shrink-0 animate-spin" aria-hidden="true" />
+            <span className="hidden sm:inline">Syncing…</span>
+          </span>
+        )}
+
+        {!isOffline && syncState === "synced" && (
+          <span
+            id="statusbar-synced-indicator"
+            className="flex items-center gap-1 rounded px-1.5 py-0.5 bg-emerald-600/90 text-white transition-opacity duration-500"
+            aria-live="polite"
+            aria-label="All changes synced"
+          >
+            <CheckCircle2 className="h-3 w-3 shrink-0" aria-hidden="true" />
+            <span className="hidden sm:inline">Synced</span>
           </span>
         )}
       </div>
