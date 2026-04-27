@@ -16,6 +16,7 @@ export default defineConfig({
       "src/**/*.{test,spec}.{ts,tsx}",
       "tests/**/*.{test,spec}.{ts,tsx}",
     ],
+    exclude: ["tests/e2e/**"],
     coverage: {
       provider: "v8",
       include: ["src/lib/**", "src/utils/**"],

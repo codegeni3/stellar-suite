@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Rocket, ExternalLink, UserPlus, ShieldAlert, Key, Trash2, Braces, Download, ReceiptText, FileCode2, TerminalSquare } from "lucide-react";
+import { Rocket, ExternalLink, UserPlus, ShieldAlert, Key, Trash2, Braces, Download, ReceiptText, FileCode2, TerminalSquare, Camera } from "lucide-react";
 import { useIdentityStore } from "@/store/useIdentityStore";
 import { useFileStore } from "@/store/useFileStore";
 import { resolveContractSchema, type FunctionSpec } from "@/lib/contractAbiParser";
@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { TransactionResultsPane } from "@/components/ide/TransactionResultsPane";
+import { invocationSnapshotManager } from "@/lib/test/SnapshotManager";
 
 interface ContractPanelProps {
   contractId: string | null;
@@ -52,6 +53,7 @@ export function ContractPanel({ contractId, onInvoke, invokeState, lastInvocatio
   const [showRawJson, setShowRawJson] = useState(false);
   const [manualFnName, setManualFnName] = useState("");
   const [manualArgs, setManualArgs] = useState("[]");
+  const [isSavingSnapshot, setIsSavingSnapshot] = useState(false);
 
   const { identities, activeContext, setActiveContext, generateNewIdentity, deleteIdentity } = useIdentityStore();
   const { files, activeTabPath, horizonUrl, customRpcUrl, networkPassphrase, network } = useFileStore();
@@ -110,6 +112,29 @@ export function ContractPanel({ contractId, onInvoke, invokeState, lastInvocatio
       toast.error(message);
     }
   };
+
+  const handleSaveInvocationSnapshot = useCallback(async () => {
+    if (!lastInvocation) {
+      toast.error("No invocation result available to snapshot");
+      return;
+    }
+
+    setIsSavingSnapshot(true);
+    try {
+      const snapshotName = `${lastInvocation.functionName}-${lastInvocation.network}`;
+      await invocationSnapshotManager.saveInvocationSnapshot({
+        contractId,
+        snapshotName,
+        invocation: lastInvocation,
+      });
+      toast.success(`Saved invocation snapshot: ${snapshotName}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to save invocation snapshot";
+      toast.error(message);
+    } finally {
+      setIsSavingSnapshot(false);
+    }
+  }, [contractId, lastInvocation]);
 
   return (
     <div className="h-full bg-card flex flex-col">
@@ -341,6 +366,18 @@ export function ContractPanel({ contractId, onInvoke, invokeState, lastInvocatio
                     className="opacity-80 hover:opacity-100"
                   />
                 </div>
+
+                <button
+                  onClick={() => {
+                    void handleSaveInvocationSnapshot();
+                  }}
+                  disabled={isSavingSnapshot}
+                  data-testid="snap-invocation-btn"
+                  className="inline-flex items-center justify-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[10px] font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
+                >
+                  <Camera className="h-3 w-3" />
+                  {isSavingSnapshot ? "Saving..." : "Snap"}
+                </button>
 
                 <pre className="max-h-28 overflow-auto rounded bg-background px-2 py-2 text-[10px] leading-relaxed text-foreground">
                   {lastInvocation.result}
